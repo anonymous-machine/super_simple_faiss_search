@@ -176,4 +176,4 @@ cython_debug/
 # test data
 test_data
 scss_data
-~
+.DS_store
