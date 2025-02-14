@@ -7,6 +7,7 @@ There is not currently a way to remove an indexed path other than deleting the
 the ``sqlite.database`` and ``faiss.index`` files, and recreating the index.
 This is a limitation of the FAISS library.
 
+If you want to add more paths to index after the first run, edit the config.ini file. Separate paths using ``;``
 
 # Using
 
@@ -36,13 +37,7 @@ uv venv create .
 uv pip install -r requirements.txt
 ```
 
-5. Edit config.ini to include the path to the files you wish to index. If you wish to index multiple paths, separate them with a ';'. E.g.,
-
-```
-Path to Files = C:/Users/John/Pictures;D:/OtherPictures
-```
-
-6. Run the program
+5. Run the program
 
 ```bash
 uv run run.py 
@@ -64,14 +59,14 @@ or
 pip3 install -r requirements.txt
 ```
 
-3. Edit config.ini to include the path to the files you wish to index. If you wish to index multiple paths, separate them with a ';'. E.g.,
-
-```
-Path to Files = C:/Users/John/Pictures;D:/OtherPictures
-```
-
-4. Run the program
+3. Run the program
 
 ```bash
 python run.py 
+```
+
+or
+
+```bash
+python3 run.py
 ```
