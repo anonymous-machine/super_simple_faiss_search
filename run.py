@@ -208,7 +208,7 @@ def search_loop(database_file: Path, index_file: Path, model: CLIPModel, process
         file_list = [f[0][0] for f in results]
         open_file_list(file_list)
 
-        conn.close()
+    conn.close()
 
 
 def main():
