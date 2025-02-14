@@ -20,7 +20,7 @@ This is a limitation of the FAISS library.
 
 I recommend using uv to create a virtual environment just for this program. Instructions are here.
 
-1. Install uv
+1. Install [uv](https://docs.astral.sh/uv/#installation)
 
 2. Navigate to the directory containing run.py
 
