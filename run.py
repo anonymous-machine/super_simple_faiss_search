@@ -212,11 +212,14 @@ def search_loop(database_file: Path, index_file: Path, model: CLIPModel, process
             result = cursor.fetchall()
             logger.debug(f'result is {result}')
             results.append(result)
-        for r in results:
-            print(f"r in results is {r}")
+        for i, r in enumerate(results):
+            #print(f"r in results is {r}")
+            print(f"{i}: {r[0][0]}")
         file_list = [f[0][0] for f in results]
         logger.debug(f'file_list is {file_list}')
-        if open_files:
+        if False:
+        #if open_files:
+            # NOTE: this does not currently function properly on Windows or Linux due to the behavior of the 'start' and 'xdg-open' commands
             open_file_list(file_list)
 
     conn.close()
@@ -300,7 +303,7 @@ logging.basicConfig(
     level=logging.DEBUG,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.StreamHandler(),
+        #logging.StreamHandler(),
         logging.FileHandler('app.log')
     ]
 )
