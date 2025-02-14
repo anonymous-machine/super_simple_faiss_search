@@ -108,7 +108,7 @@ def embed_image(file: Path, model: CLIPModel, processor: AutoProcessor) -> np.ar
     with Image.open(file) as img:
         inputs = processor(images=[img], return_tensors="pt").to(device)
         image_features = model.get_image_features(**inputs).cpu().detach().numpy().flatten()
-        logger.debug("image_features is {image_features}")
+        logger.debug(f"image_features is {image_features}")
     return image_features
 
 def embed_text(text: str, model: CLIPModel, tokenizer: AutoTokenizer) -> np.array:
@@ -125,13 +125,14 @@ def file_search(path: Path, database_file: Path) -> list:
     suffixes = {'.png', '.jpg', '.jpeg'} # I could make this more resilient with mimetypes or magic. I'm probably not going to, so don't use weird image formats
     image_files_on_disk = {str(f) for f in path.rglob("*") if f.suffix.lower() in suffixes}
     logger.debug(f'there are {len(image_files_on_disk)} image files in the database')
+    logger.debug(f'all files on disk are: {image_files_on_disk}')
     image_files_in_database = set()
 
     with sqlite3.connect(database_file) as conn:
         logger.info('getting file list from database')
         cursor = conn.cursor()
         image_files_in_database = {t[0] for t in cursor.execute("SELECT path FROM Files;").fetchall()}
-        logger.debug('there are {len(image_files_in_database) files in the database')
+        logger.debug(f'there are {len(image_files_in_database)} files in the database')
 
     unindexed_files = image_files_on_disk - image_files_in_database
     logger.info(f'there are {len(unindexed_files)} files on disk')
@@ -187,10 +188,10 @@ def search_loop(database_file: Path, index_file: Path, model: CLIPModel, process
     conn = sqlite3.connect(database_file)
     cursor = conn.cursor()
     while True:
-        print('Type "N" to exit')
+        print('Type "exit" to exit')
         search_string = input("Type a string that you want to search. If the thing you type looks like that path to an image, it will be used for a similarity search.\n")
         logger.info(f"search string is {search_string}")
-        if search_string.upper() == "N":
+        if search_string.lower() == "exit":
             logger.info("Exiting from search loop")
             break
         elif Path(search_string).is_file():
@@ -222,14 +223,41 @@ def search_loop(database_file: Path, index_file: Path, model: CLIPModel, process
 
 
 def main():
+    config_file = 'config.ini'
     config = configparser.ConfigParser()
-    config.read('config.ini')
+    config.read(config_file)
     search_depth = int(config["ML"]["Search Depth"])
     open_files = config.getboolean("ML", "Open Files")
     logger.debug(f'search_depth is {search_depth}')
     logger.debug(f'open_files is {open_files}')
 
     index_paths = config["Storage"]["Path to Files"]
+    if index_paths == '':
+        logger.info('index_paths not configured')
+        print('no index paths have been configured. Please enter the paths you would like to index. Enter "exit" to stop adding paths. If you do not enter any paths, the program will exit.')
+        added_paths = list()
+        while True:
+            input_path = input()
+            logger.info(f'input_path is {input_path}')
+            if input_path.lower() == 'exit':
+                if len(added_paths) == 0:
+                    return
+                break
+            if not validate_image_path(Path(input_path)):
+                print(f"Path does not appear to be valid, please try again")
+                logger.info(f"Path does not appear to be valid")
+            else:
+                print(f'Adding {input_path}')
+                added_paths.append(input_path)
+
+        logger.info(f'input_paths is {added_paths}')
+        config_value = ";".join(added_paths)
+        logger.info(f'config value will be {config_value}')
+        config.set("Storage", "Path to Files", config_value)
+        with open(config_file, 'w') as f:
+            config.write(f)
+        index_paths = config_value
+
     index_paths = index_paths.split(";")
     index_paths = [to_absolute_path(Path(p)) for p in index_paths]
     logger.debug(f'index_paths is {index_paths}')
