@@ -73,5 +73,5 @@ Path to Files = C:/Users/John/Pictures;D:/OtherPictures
 4. Run the program
 
 ```bash
-uv run run.py 
+python run.py 
 ```
