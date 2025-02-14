@@ -181,32 +181,42 @@ def index_path(path: Path, database_file: Path, index_file: Path, model: CLIPMod
     faiss.write_index(index, str(index_file))
         
 
-def search_loop(database_file: Path, index_file: Path, model: CLIPModel, processor: AutoProcessor, tokenizer: AutoTokenizer, search_depth: int) -> None:
+def search_loop(database_file: Path, index_file: Path, model: CLIPModel, processor: AutoProcessor, tokenizer: AutoTokenizer, search_depth: int, open_files: bool) -> None:
+    logger.info("entering search loop")
     index = faiss.read_index(str(index_file))
     conn = sqlite3.connect(database_file)
     cursor = conn.cursor()
     while True:
         print('Type "N" to exit')
         search_string = input("Type a string that you want to search. If the thing you type looks like that path to an image, it will be used for a similarity search.\n")
+        logger.info(f"search string is {search_string}")
         if search_string.upper() == "N":
+            logger.info("Exiting from search loop")
             break
         elif Path(search_string).is_file():
+            logger.info("search_string is a path, parsing as image to embed")
             search_vector = embed_image(file=Path(search_string), model=model, processor=processor)
         else:
+            logger.info("search_string is a string, parsing as text to embed")
             search_vector = embed_text(text=search_string, model=model, tokenizer=tokenizer)
         search_vector = search_vector.reshape(1, -1)
         _, indexes = index.search(search_vector, search_depth)
         reconstructed_vectors = index.reconstruct_batch(indexes[0])
         hash_list = np.apply_along_axis(hash_vector, 1, reconstructed_vectors).tolist()
         results = list()
+        logger.info('performing vector lookup')
         for vector_hash in hash_list:
+            logger.debug(f'vector_hash is {vector_hash}')
             cursor.execute("SELECT path FROM Files WHERE vector_hash = ?", (vector_hash,))
             result = cursor.fetchall()
+            logger.debug(f'result is {result}')
             results.append(result)
         for r in results:
             print(f"r in results is {r}")
         file_list = [f[0][0] for f in results]
-        open_file_list(file_list)
+        logger.debug(f'file_list is {file_list}')
+        if open_files:
+            open_file_list(file_list)
 
     conn.close()
 
@@ -256,7 +266,7 @@ def main():
     for path in index_paths:
         index_path(path, database_file=database_file, index_file=index_file, model=model, processor=processor)
 
-    search_loop(database_file=database_file, index_file=index_file, model=model, processor=processor, tokenizer=tokenizer, search_depth=search_depth)
+    search_loop(database_file=database_file, index_file=index_file, model=model, processor=processor, tokenizer=tokenizer, search_depth=search_depth, open_files=open_files)
 
 logging.basicConfig(
     level=logging.DEBUG,
