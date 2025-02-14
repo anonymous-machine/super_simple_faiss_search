@@ -45,7 +45,7 @@ uv run run.py
 
 ## Method 2: Plain Python (no venv)
 
-1. Navigate to the firectory containing run.py
+1. Navigate to the directory containing run.py
 
 2. Install requirements
 
